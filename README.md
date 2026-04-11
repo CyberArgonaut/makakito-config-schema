@@ -1,0 +1,1 @@
+# makakito-config-schema
