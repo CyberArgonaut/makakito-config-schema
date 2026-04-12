@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://makakito.dev/schemas/scenario/v1",
+  "title": "MakakitoScenario",
+  "description": "A chaos scenario definition. Consumed by the runner to inject faults into a playground service.",
+  "type": "object",
+  "required": ["name", "faults"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable scenario identifier.",
+      "example": "cpu-stress"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of what this scenario tests."
+    },
+    "defaults": {
+      "$ref": "#/definitions/Defaults"
+    },
+    "faults": {
+      "type": "array",
+      "description": "Ordered list of faults to inject. Applied sequentially unless a scheduler is introduced in a later version.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Fault"
+      }
+    }
+  },
+  "definitions": {
+    "Defaults": {
+      "type": "object",
+      "description": "Default timing values applied to every fault that does not specify its own.",
+      "additionalProperties": false,
+      "properties": {
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Default fault duration in seconds.",
+          "example": 30
+        },
+        "cooldownSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Seconds to wait between faults.",
+          "example": 5
+        }
+      }
+    },
+    "Fault": {
+      "type": "object",
+      "description": "A single fault to inject into the target service.",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Fault kind identifier. Must match a fault driver registered in the runner (e.g. 'cpu-stress', 'http-fault', 'network-latency', 'queue-consumer-lag').",
+          "example": "cpu-stress"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional human-readable note about what this fault step exercises."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How long to hold this fault. Overrides defaults.durationSeconds for this fault only.",
+          "example": 30
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Fault-driver-specific parameters. Keys and values are defined by each driver; this object is intentionally open.",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "1.0.0",
+  "playground": {
+    "name": "microservices-full",
+    "type": "microservices",
+    "description": "Full microservices playground with every optional field populated. Used to stress-test the validator and roundtrip parser."
+  },
+  "services": [
+    {
+      "name": "api-gateway",
+      "image": "nginx:1.25-alpine",
+      "type": "gateway",
+      "port": 8080,
+      "replicas": 2,
+      "resources": {
+        "cpu": "0.5",
+        "memory": "256m"
+      },
+      "env": {
+        "UPSTREAM_HOST": "orders-service",
+        "UPSTREAM_PORT": "3000"
+      }
+    },
+    {
+      "name": "orders-service",
+      "image": "makakito/orders-service:latest",
+      "type": "web",
+      "port": 3000,
+      "dependsOn": ["postgres", "redis"],
+      "replicas": 3,
+      "resources": {
+        "cpu": "1.0",
+        "memory": "512m"
+      },
+      "env": {
+        "DATABASE_URL": "postgres://app:secret@postgres:5432/orders",
+        "REDIS_URL": "redis://redis:6379/0",
+        "LOG_LEVEL": "info"
+      }
+    },
+    {
+      "name": "inventory-service",
+      "image": "makakito/inventory-service:latest",
+      "type": "web",
+      "port": 3001,
+      "dependsOn": ["postgres"],
+      "resources": {
+        "cpu": "0.5",
+        "memory": "256m"
+      },
+      "env": {
+        "DATABASE_URL": "postgres://app:secret@postgres:5432/inventory"
+      }
+    },
+    {
+      "name": "notification-service",
+      "image": "makakito/notification-service:latest",
+      "type": "worker",
+      "dependsOn": ["orders-service"],
+      "resources": {
+        "cpu": "0.25",
+        "memory": "128m"
+      },
+      "env": {
+        "ORDERS_URL": "http://orders-service:3000",
+        "SMTP_HOST": "mailhog",
+        "SMTP_PORT": "1025"
+      }
+    },
+    {
+      "name": "postgres",
+      "image": "postgres:15-alpine",
+      "type": "database",
+      "port": 5432,
+      "resources": {
+        "cpu": "1.0",
+        "memory": "1g"
+      },
+      "env": {
+        "POSTGRES_USER": "app",
+        "POSTGRES_PASSWORD": "secret",
+        "POSTGRES_DB": "orders"
+      }
+    },
+    {
+      "name": "redis",
+      "image": "redis:7-alpine",
+      "type": "cache",
+      "port": 6379,
+      "resources": {
+        "cpu": "0.25",
+        "memory": "128m"
+      }
+    }
+  ],
+  "experiment": {
+    "name": "latency-injection-orders-full",
+    "description": "Inject network latency with all optional parameters to verify cascade behavior, alerting, and metrics capture.",
+    "scenario": "scenarios/network-latency.yaml",
+    "targetService": "orders-service",
+    "durationSeconds": 120,
+    "parameters": {
+      "latencyMs": 500,
+      "jitterMs": 50,
+      "affectedPercentage": 100,
+      "protocol": "tcp"
+    }
+  },
+  "traffic": {
+    "requestsPerSecond": 50,
+    "connections": 10,
+    "targetService": "api-gateway",
+    "durationSeconds": 150
+  },
+  "report": {
+    "outputFormat": "both",
+    "includeMetricsSnapshot": false,
+    "outputPath": "./reports/microservices-full"
+  }
+}
