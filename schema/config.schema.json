@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://makakito.dev/schemas/config/v1",
+  "title": "MakakitoConfig",
+  "description": "Canonical configuration for a Makakito chaos-engineering playground session. Produced by the builder, consumed by the runner and CLI.",
+  "type": "object",
+  "required": ["schemaVersion", "playground", "services", "experiment"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"],
+      "description": "Schema version. Must match the config package SchemaVersion constant.",
+      "example": "1.0.0"
+    },
+    "playground": {
+      "$ref": "#/definitions/Playground"
+    },
+    "services": {
+      "type": "array",
+      "description": "List of services that make up the playground environment.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Service"
+      }
+    },
+    "experiment": {
+      "$ref": "#/definitions/Experiment"
+    },
+    "report": {
+      "$ref": "#/definitions/Report"
+    },
+    "traffic": {
+      "$ref": "#/definitions/Traffic"
+    }
+  },
+  "definitions": {
+    "Playground": {
+      "type": "object",
+      "description": "Describes the type and identity of the chaos-engineering playground.",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable name for the playground.",
+          "example": "my-microservices-playground"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["microservices", "queue", "external-api"],
+          "description": "Playground topology type. Determines which Docker Compose template the runner uses.",
+          "example": "microservices"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional human-readable description of the playground purpose."
+        }
+      }
+    },
+    "Service": {
+      "type": "object",
+      "description": "A single containerised service in the playground.",
+      "required": ["name", "image", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique service identifier within the playground.",
+          "example": "api"
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Docker image reference (name:tag or full registry path).",
+          "example": "nginx:1.25-alpine"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["web", "worker", "database", "cache", "queue", "gateway", "downstream"],
+          "description": "Logical role of the service. Used by the runner to apply appropriate chaos strategies.",
+          "example": "web"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Primary port exposed by the service.",
+          "example": 8080
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables injected into the container. Keys and values are arbitrary strings.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "dependsOn": {
+          "type": "array",
+          "description": "Names of services that must be healthy before this service starts.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "replicas": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of container replicas. Defaults to 1 when omitted.",
+          "example": 2
+        },
+        "resources": {
+          "$ref": "#/definitions/Resources"
+        }
+      }
+    },
+    "Resources": {
+      "type": "object",
+      "description": "CPU and memory limits for a service container.",
+      "additionalProperties": false,
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "minLength": 1,
+          "description": "CPU limit in Docker format (e.g. '0.5', '1.0').",
+          "example": "0.5"
+        },
+        "memory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Memory limit in Docker format (e.g. '256m', '1g').",
+          "example": "256m"
+        }
+      }
+    },
+    "Experiment": {
+      "type": "object",
+      "description": "The chaos experiment to execute against the playground.",
+      "required": ["name", "scenario"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable experiment identifier.",
+          "example": "cpu-stress-api"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of what the experiment is testing."
+        },
+        "scenario": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to the scenario YAML file (relative to the config file, or absolute).",
+          "example": "scenarios/cpu-stress.yaml"
+        },
+        "targetService": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the service to inject faults into. Must match a name in services[].",
+          "example": "api"
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Override the scenario's default experiment duration in seconds.",
+          "example": 60
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Scenario-specific override parameters. Keys and values are defined by the scenario author.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "Report": {
+      "type": "object",
+      "description": "Controls how experiment results are persisted.",
+      "required": ["outputFormat"],
+      "additionalProperties": false,
+      "properties": {
+        "outputFormat": {
+          "type": "string",
+          "enum": ["json", "html", "both"],
+          "description": "Format(s) to write the experiment report in.",
+          "example": "json"
+        },
+        "includeMetricsSnapshot": {
+          "type": "boolean",
+          "description": "When true, a snapshot of service metrics at experiment end is embedded in the report."
+        },
+        "outputPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directory where report files are written. Defaults to './reports' when omitted.",
+          "example": "./reports"
+        }
+      }
+    },
+    "Traffic": {
+      "type": "object",
+      "description": "Inline traffic-generation settings for the experiment. A lightweight alternative to a full traffic-profile YAML (v1.1+).",
+      "additionalProperties": false,
+      "properties": {
+        "requestsPerSecond": {
+          "type": "number",
+          "minimum": 0.1,
+          "description": "Sustained request rate aimed at the target service.",
+          "example": 100
+        },
+        "connections": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of concurrent connections to maintain.",
+          "example": 10
+        },
+        "targetService": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the service to send traffic to. Defaults to the experiment's targetService when omitted.",
+          "example": "api"
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How long to generate traffic for. Defaults to the experiment's durationSeconds when omitted.",
+          "example": 60
+        }
+      }
+    }
+  }
+}

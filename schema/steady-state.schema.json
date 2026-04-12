@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://makakito.dev/schemas/steady-state/v1",
+  "title": "MakakitoSteadyState",
+  "description": "Steady-state hypothesis: baseline conditions that must hold before a chaos experiment begins and should be restored afterward.",
+  "type": "object",
+  "required": ["name", "thresholds"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable hypothesis identifier.",
+      "example": "api-responds-within-200ms"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the system state this hypothesis verifies."
+    },
+    "thresholds": {
+      "type": "array",
+      "description": "Ordered list of metric thresholds. All must pass for the hypothesis to hold.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/Threshold"
+      }
+    }
+  },
+  "definitions": {
+    "Threshold": {
+      "type": "object",
+      "description": "A single measurable condition that the system must satisfy.",
+      "required": ["metric", "operator", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Metric path as understood by the runner's metrics collector (e.g. 'http.p99_latency_ms', 'service.error_rate').",
+          "example": "http.p99_latency_ms"
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["lt", "lte", "gt", "gte", "eq"],
+          "description": "Comparison operator: lt (<), lte (≤), gt (>), gte (≥), eq (=).",
+          "example": "lt"
+        },
+        "value": {
+          "type": "number",
+          "description": "Threshold value the metric is compared against using operator.",
+          "example": 200
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional human-readable explanation of why this threshold matters.",
+          "example": "p99 latency must stay below 200 ms"
+        }
+      }
+    }
+  }
+}

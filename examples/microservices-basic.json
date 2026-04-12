@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0.0",
+  "playground": {
+    "name": "microservices-basic",
+    "type": "microservices",
+    "description": "Basic microservices playground with an API gateway, order and inventory services, a background worker, and a database."
+  },
+  "services": [
+    {
+      "name": "api-gateway",
+      "image": "nginx:1.25-alpine",
+      "type": "gateway",
+      "port": 8080
+    },
+    {
+      "name": "orders-service",
+      "image": "makakito/orders-service:latest",
+      "type": "web",
+      "port": 3000
+    },
+    {
+      "name": "inventory-service",
+      "image": "makakito/inventory-service:latest",
+      "type": "web",
+      "port": 3001
+    },
+    {
+      "name": "notification-service",
+      "image": "makakito/notification-service:latest",
+      "type": "worker"
+    },
+    {
+      "name": "postgres",
+      "image": "postgres:15-alpine",
+      "type": "database",
+      "port": 5432
+    }
+  ],
+  "experiment": {
+    "name": "latency-injection-orders",
+    "description": "Inject 500 ms network latency into the orders service to observe cascade effects on the gateway and inventory service.",
+    "scenario": "scenarios/network-latency.yaml",
+    "targetService": "orders-service",
+    "durationSeconds": 60
+  }
+}
