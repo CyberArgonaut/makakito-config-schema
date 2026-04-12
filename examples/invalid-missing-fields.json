@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "playground": {
+    "name": "invalid-missing-fields",
+    "type": "microservices"
+  },
+  "services": [
+    {
+      "name": "api",
+      "image": "nginx:1.25-alpine",
+      "type": "web",
+      "port": 8080
+    }
+  ],
+  "experiment": {
+    "name": "missing-scenario-field",
+    "targetService": "api"
+  }
+}

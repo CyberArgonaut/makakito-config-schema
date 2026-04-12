@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "playground": {
+    "name": "invalid-bad-values",
+    "type": "unknown"
+  },
+  "services": [
+    {
+      "name": "api",
+      "image": "nginx:1.25-alpine",
+      "type": "not-a-type",
+      "port": 8080
+    }
+  ],
+  "experiment": {
+    "name": "bad-values-experiment",
+    "scenario": "scenarios/cpu-stress.yaml",
+    "targetService": "api"
+  }
+}

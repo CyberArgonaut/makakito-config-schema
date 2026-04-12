@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "1.0.0",
+  "playground": {
+    "name": "queue-basic",
+    "type": "queue",
+    "description": "Queue playground with a producer, broker, and consumer. Explores consumer-lag chaos and its effect on producer backpressure."
+  },
+  "services": [
+    {
+      "name": "producer",
+      "image": "makakito/queue-producer:latest",
+      "type": "worker",
+      "env": {
+        "BROKER_URL": "amqp://broker:5672",
+        "QUEUE_NAME": "orders",
+        "PUBLISH_INTERVAL_MS": "100"
+      }
+    },
+    {
+      "name": "broker",
+      "image": "rabbitmq:3.12-management-alpine",
+      "type": "queue",
+      "port": 5672
+    },
+    {
+      "name": "consumer",
+      "image": "makakito/queue-consumer:latest",
+      "type": "worker",
+      "dependsOn": ["broker"],
+      "env": {
+        "BROKER_URL": "amqp://broker:5672",
+        "QUEUE_NAME": "orders"
+      }
+    }
+  ],
+  "experiment": {
+    "name": "queue-consumer-lag",
+    "description": "Pause the consumer to build queue depth and observe how the producer and broker handle backpressure.",
+    "scenario": "scenarios/queue-consumer-lag.yaml",
+    "targetService": "consumer",
+    "durationSeconds": 90
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "playground": {
+    "name": "external-api-basic",
+    "type": "external-api",
+    "description": "External-API playground with a gateway and a downstream payments service. Explores HTTP fault injection and gateway fallback behavior."
+  },
+  "services": [
+    {
+      "name": "gateway",
+      "image": "makakito/api-gateway:latest",
+      "type": "gateway",
+      "port": 8080,
+      "env": {
+        "DOWNSTREAM_URL": "http://payments-api:4000",
+        "TIMEOUT_MS": "3000"
+      }
+    },
+    {
+      "name": "payments-api",
+      "image": "makakito/payments-api:latest",
+      "type": "downstream",
+      "port": 4000
+    }
+  ],
+  "experiment": {
+    "name": "http-fault-payments",
+    "description": "Inject HTTP 503 errors on the payments API to observe whether the gateway correctly returns fallback responses.",
+    "scenario": "scenarios/http-fault.yaml",
+    "targetService": "payments-api",
+    "durationSeconds": 60
+  }
+}
