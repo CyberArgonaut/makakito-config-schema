@@ -39,8 +39,12 @@ func TestValidExamples(t *testing.T) {
 				t.Fatalf("validation engine error: %v", err)
 			}
 			if len(violations) > 0 {
+				msgs := make([]string, len(violations))
+				for i, v := range violations {
+					msgs[i] = v.String()
+				}
 				t.Errorf("%s should be valid but got %d violation(s):\n%s",
-					name, len(violations), strings.Join(violations, "\n"))
+					name, len(violations), strings.Join(msgs, "\n"))
 			}
 		})
 	}
