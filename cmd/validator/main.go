@@ -29,7 +29,7 @@ func main() {
 	if len(violations) > 0 {
 		fmt.Fprintf(os.Stderr, "%s is invalid (schema v%s):\n", path, config.SchemaVersion)
 		for _, v := range violations {
-			fmt.Fprintln(os.Stderr, v)
+			fmt.Fprintf(os.Stderr, "  • %s\n", v.String())
 		}
 		os.Exit(1)
 	}

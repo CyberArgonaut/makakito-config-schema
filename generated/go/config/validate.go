@@ -23,26 +23,15 @@ func getCompiledSchema() (*jsonschema.Schema, error) {
 }
 
 // Validate validates raw JSON against the embedded config schema.
-// Returns a slice of human-readable violation strings on failure, nil on success.
+// Returns structured violations on failure, nil on success.
 // A non-nil error indicates a failure in the validation engine itself (e.g. malformed
 // schema or document), not a schema violation.
-func Validate(data []byte) ([]string, error) {
+func Validate(data []byte) ([]jsonschema.Violation, error) {
 	s, err := getCompiledSchema()
 	if err != nil {
 		return nil, fmt.Errorf("validation engine error: %w", err)
 	}
-	violations, err := jsonschema.Validate(s, data)
-	if err != nil {
-		return nil, fmt.Errorf("validation engine error: %w", err)
-	}
-	if len(violations) == 0 {
-		return nil, nil
-	}
-	result := make([]string, len(violations))
-	for i, v := range violations {
-		result[i] = "  • " + v.String()
-	}
-	return result, nil
+	return jsonschema.Validate(s, data)
 }
 
 // Parse validates and unmarshals raw JSON into a MakakitoConfig.
@@ -56,7 +45,7 @@ func Parse(data []byte) (*MakakitoConfig, error) {
 	if len(violations) > 0 {
 		errs := make([]error, len(violations))
 		for i, v := range violations {
-			errs[i] = errors.New(v)
+			errs[i] = errors.New(v.String())
 		}
 		return nil, errors.Join(errs...)
 	}
